@@ -1,0 +1,1360 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// "use client";
+
+// import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+// import { useDispatch, useSelector } from "react-redux";
+// import { updateTask, fetchTaskById } from "@/modules/project-management/task/slices/taskSlice";
+// import { fetchTeamByProjectId } from "@/modules/project-management/team/slices/teamSlice";
+// import { Edit, User, Flag, CalendarIcon, Info, X, Loader } from "lucide-react";
+// import { toast } from "sonner";
+// import { Textarea } from "@/components/ui/textarea";
+// import { Button } from "@/components/ui/button";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+// import { Calendar } from "@/components/ui/calendar";
+// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+// import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+// import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+// import { format } from "date-fns";
+// import { cn } from "@/lib/utils";
+// import { useCurrentUser } from "@/hooks/useCurrentUser";
+
+// const priorityConfig = {
+//   Low: { color: "bg-emerald-100 text-emerald-800", badge: "Low" },
+//   Medium: { color: "bg-amber-100 text-amber-800", badge: "Medium" },
+//   High: { color: "bg-rose-100 text-rose-800", badge: "High" },
+// };
+
+// const getInitials = (name = "") =>
+//   name.trim().split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
+
+// const EditTaskModal = ({ taskId, isOpen, onClose, onTaskUpdated }) => {
+//   const dispatch = useDispatch();
+//   const { currentUser } = useCurrentUser();
+//   const task = useSelector(state => state.task.currentTask);
+//   const { teamsByProject: teams } = useSelector(state => state.team);
+//   const { status: taskStatus, error: taskError } = useSelector(state => state.task);
+
+//   const prevOpenRef = useRef(isOpen);
+
+//   const [formData, setFormData] = useState({ title: "", description: "", priority: "Medium" });
+//   const [selectedAssignees, setSelectedAssignees] = useState([]);
+//   const [selectedTeam, setSelectedTeam] = useState(null);
+//   const [selectedDateTime, setSelectedDateTime] = useState(null);
+//   const [memberSearchQuery, setMemberSearchQuery] = useState("");
+//   const [memberOpen, setMemberOpen] = useState(false);
+//   const [hasUserInteracted, setHasUserInteracted] = useState(false); // ← NEW: prevents errors on first load
+//   const [errors, setErrors] = useState({});
+
+//   // Fetch data when modal opens
+//   useEffect(() => {
+//     const justOpened = isOpen && !prevOpenRef.current;
+//     if (justOpened && taskId) {
+//       dispatch(fetchTaskById(taskId));
+//     }
+//     prevOpenRef.current = isOpen;
+//   }, [isOpen, taskId, dispatch]);
+
+//   // Pre-fill form when task + teams are loaded
+//   useEffect(() => {
+//     if (!task || !isOpen) return;
+
+//     const deadlineDate = task.deadline ? new Date(task.deadline) : null;
+
+//     setFormData({
+//       title: task.title || "",
+//       description: task.description || "",
+//       priority: task.priority || "Medium",
+//     });
+//     setSelectedDateTime(deadlineDate);
+
+//     // 1. Find and set team FIRST
+//     const currentTeam = teams.find(t => t.teamId === task.teamId);
+//     setSelectedTeam(currentTeam || null);
+
+//     // 2. Then set assignees
+//     const assignees = Array.isArray(task.assignedTo)
+//       ? task.assignedTo.map(a => ({
+//           memberId: a.memberId || a._id,
+//           memberName: a.memberName || a.name,
+//           role: a.role || "Member",
+//         }))
+//       : task.assignedToDetails
+//       ? [{
+//           memberId: task.assignedToDetails.memberId,
+//           memberName: task.assignedToDetails.memberName,
+//           role: task.assignedToDetails.role || "Member",
+//         }]
+//       : [];
+
+//     setSelectedAssignees(assignees);
+//     setMemberSearchQuery("");
+//     setHasUserInteracted(false); // ← Reset interaction flag
+//     setErrors({}); // ← Clear errors on load
+//   }, [task, teams, isOpen]);
+
+//   // Fetch teams when projectId is known
+//   useEffect(() => {
+//     if (task?.projectId && isOpen) {
+//       dispatch(fetchTeamByProjectId(task.projectId));
+//     }
+//   }, [task?.projectId, isOpen, dispatch]);
+
+//   const handleTeamSelect = useCallback((value) => {
+//     const team = teams.find(t => t.teamId === value);
+//     setSelectedTeam(team);
+//     setSelectedAssignees([]); // clear assignees when team changes
+//     setHasUserInteracted(true);
+//   }, [teams]);
+
+//   const availableMembers = useMemo(() => {
+//     if (!selectedTeam?.teamMembers) return [];
+//     const q = memberSearchQuery.toLowerCase();
+//     return selectedTeam.teamMembers
+//       .filter(m =>
+//         m.memberName?.toLowerCase().includes(q) &&
+//         !selectedAssignees.some(a => a.memberId === m.memberId)
+//       )
+//       .map(m => ({
+//         memberId: m.memberId,
+//         memberName: m.memberName,
+//         role: m.role || "Member",
+//       }));
+//   }, [selectedTeam, memberSearchQuery, selectedAssignees]);
+
+//   const toggleAssignee = useCallback((member) => {
+//     setSelectedAssignees(prev => {
+//       const exists = prev.some(a => a.memberId === member.memberId);
+//       setHasUserInteracted(true);
+//       return exists
+//         ? prev.filter(a => a.memberId !== member.memberId)
+//         : [...prev, member];
+//     });
+//   }, []);
+
+//   const validate = useCallback(() => {
+//     // Only show errors after user has interacted
+//     if (!hasUserInteracted) return true;
+
+//     const newErrors = {};
+//     if (!formData.title.trim()) newErrors.title = "Title is required";
+//     if (!formData.description.trim()) newErrors.description = "Description is required";
+//     if (!selectedDateTime) newErrors.deadline = "Deadline is required";
+//     if (!selectedTeam) newErrors.team = "Team selection is required";
+//     if (selectedAssignees.length === 0) newErrors.assignedTo = "Assign at least one member";
+
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   }, [formData, selectedDateTime, selectedTeam, selectedAssignees, hasUserInteracted]);
+
+//   const handleSubmit = useCallback(async (e) => {
+//     e.preventDefault();
+//     setHasUserInteracted(true);
+//     if (!validate()) {
+//       toast.error("Please fill all required fields");
+//       return;
+//     }
+
+//     const deadlineISO = selectedDateTime ? selectedDateTime.toISOString() : null;
+
+//     const payload = {
+//       task_id: taskId,
+//       title: formData.title.trim(),
+//       description: formData.description.trim(),
+//       priority: formData.priority,
+//       deadline: deadlineISO,
+//       teamId: selectedTeam.teamId,
+//       assignedTo: selectedAssignees.map(m => ({
+//         memberId: m.memberId,
+//         memberName: m.memberName,
+//         role: m.role,
+//       })),
+//       actionedBy: {
+//         note: "Task Updated!",
+//         performedBy: currentUser?.name || currentUser?.email || "Unknown User",
+//         timestamp: new Date().toISOString(),
+//       },
+//     };
+
+//     try {
+//       await dispatch(updateTask(payload)).unwrap();
+//       toast.success("Task updated successfully!");
+//       onTaskUpdated?.();
+//       onClose();
+//     } catch (err) {
+//       toast.error(taskError || "Failed to update task");
+//     }
+//   }, [validate, formData, selectedDateTime, selectedTeam, selectedAssignees, taskId, currentUser, dispatch, taskError, onTaskUpdated, onClose]);
+
+//   const displayDateTime = selectedDateTime
+//     ? format(selectedDateTime, "MMM dd, yyyy 'at' HH:mm")
+//     : "Select date & time";
+
+//   const isSaveEnabled = formData.title.trim() && formData.description.trim() && selectedDateTime && selectedTeam && selectedAssignees.length > 0;
+
+//   if (!isOpen) return null;
+
+//   return (
+//     <Dialog open={isOpen} onOpenChange={onClose}>
+//       <DialogContent className="w-full max-w-full h-[100vh] max-h-[100vh] sm:max-w-6xl sm:max-h-[85vh] bg-white shadow-lg border border-gray-200 rounded-lg text-black p-2">
+//         <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 border-b border-gray-200 sticky top-0 z-10">
+//           <div className="flex justify-between items-center">
+//             <DialogTitle className="text-base sm:text-lg font-bold text-gray-800 flex items-center">
+//               <Edit className="mr-2 h-4 w-4 text-blue-500" />
+//               Edit Task
+//             </DialogTitle>
+//             <DialogClose asChild>
+//               <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-100 rounded-full h-7 w-7">
+//                 <X className="h-3 w-3" />
+//               </Button>
+//             </DialogClose>
+//           </div>
+//         </DialogHeader>
+
+//         <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(85vh-60px)]">
+//           <form onSubmit={handleSubmit} className="space-y-4">
+
+//             {/* Title */}
+//             <div className="w-full">
+//               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                 <Edit className="h-4 w-4 text-blue-500 mr-2" />Title <span className="text-red-500 ml-1">*</span>
+//               </label>
+              
+//                <Textarea
+//                               value={formData.title}
+//                               onChange={(e) =>
+//                                 setFormData((prev) => ({
+//                                   ...prev,
+//                                   title: e.target.value.slice(0, 150),
+//                                 }))
+//                               }
+//                               className="w-full bg-white border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 p-3"
+//                               placeholder="Enter subtask title..."
+//                             />
+//                 <p className="text-xs text-muted-foreground mt-1">
+//                 {formData.title.length} / 150 characters
+//               </p>
+//               {errors.title && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.title}</p>}
+//             </div>
+
+//             {/* Priority & Deadline */}
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//               <div>
+//                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                   <Flag className="h-4 w-4 text-blue-500 mr-2" /> Priority
+//                 </label>
+//                 <Select value={formData.priority} onValueChange={(v) => { setFormData(prev => ({ ...prev, priority: v })); setHasUserInteracted(true); }}>
+//                   <SelectTrigger className="w-full h-10">
+//                     <SelectValue>
+//                       <span className={cn("px-2 py-1 rounded-full text-xs font-medium", priorityConfig[formData.priority]?.color)}>
+//                         {priorityConfig[formData.priority]?.badge}
+//                       </span>
+//                     </SelectValue>
+//                   </SelectTrigger>
+//                   <SelectContent>
+//                     {Object.entries(priorityConfig).map(([key, config]) => (
+//                       <SelectItem key={key} value={key}>
+//                         <span className={cn("px-2 py-1 rounded-full text-xs font-medium", config.color)}>
+//                           {config.badge}
+//                         </span>
+//                       </SelectItem>
+//                     ))}
+//                   </SelectContent>
+//                 </Select>
+//               </div>
+
+//               <div>
+//                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                   <CalendarIcon className="h-4 w-4 text-blue-500 mr-2" /> Deadline <span className="text-red-500 ml-1">*</span>
+//                 </label>
+//                 <Popover>
+//                   <PopoverTrigger asChild>
+//                     <Button variant="outline" className={cn("w-full justify-between h-10 text-sm", !selectedDateTime && "text-gray-500")}>
+//                       {displayDateTime}
+//                     </Button>
+//                   </PopoverTrigger>
+//                   <PopoverContent className="w-auto p-0 bg-white border border-gray-200 rounded-lg shadow-lg">
+//                     <Calendar mode="single" selected={selectedDateTime} onSelect={(date) => { setSelectedDateTime(date); setHasUserInteracted(true); }} initialFocus className="rounded-lg" />
+//                     <div className="p-3 border-t flex items-center gap-2">
+//                       <input
+//                         type="time"
+//                         value={selectedDateTime ? format(selectedDateTime, "HH:mm") : ""}
+//                         onChange={(e) => {
+//                           if (selectedDateTime) {
+//                             const [h, m] = e.target.value.split(":");
+//                             const newDt = new Date(selectedDateTime);
+//                             newDt.setHours(parseInt(h), parseInt(m));
+//                             setSelectedDateTime(newDt);
+//                             setHasUserInteracted(true);
+//                           }
+//                         }}
+//                         className="h-10 border rounded px-3 text-sm w-full"
+//                       />
+//                     </div>
+//                   </PopoverContent>
+//                 </Popover>
+//                 {errors.deadline && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.deadline}</p>}
+//               </div>
+//             </div>
+
+//             {/* Team */}
+//             <div>
+//               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                 <User className="h-4 w-4 text-blue-500 mr-2" /> Team <span className="text-red-500 ml-1">*</span>
+//               </label>
+//               <Select value={selectedTeam?.teamId || ""} onValueChange={handleTeamSelect}>
+//                 <SelectTrigger className="w-full h-10">
+//                   <SelectValue placeholder="Select team" />
+//                 </SelectTrigger>
+//                 <SelectContent>
+//                   {teams.map((team) => (
+//                     <SelectItem key={team.teamId} value={team.teamId}>{team.teamName}</SelectItem>
+//                   ))}
+//                 </SelectContent>
+//               </Select>
+//               {errors.team && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.team}</p>}
+//             </div>
+
+//             {/* Assign To */}
+//             <div>
+//               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                 <User className="h-4 w-4 text-blue-500 mr-2" /> Assign To <span className="text-red-500 ml-1">*</span>
+//               </label>
+//               <div className="flex flex-wrap gap-3 items-center">
+//                 {selectedAssignees.map((person) => (
+//                   <div key={person.memberId} className="relative group">
+//                     <Avatar className="h-10 w-10 ring-4 ring-white border-2 border-white cursor-pointer hover:scale-110 transition">
+//                       <AvatarFallback className="bg-teal-600 text-white text-sm font-bold">
+//                         {getInitials(person.memberName)}
+//                       </AvatarFallback>
+//                     </Avatar>
+//                     <button
+//                       type="button"
+//                       onClick={() => toggleAssignee(person)}
+//                       className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+//                     >
+//                       <X className="h-3 w-3" />
+//                     </button>
+//                   </div>
+//                 ))}
+
+//                 <Popover open={memberOpen} onOpenChange={setMemberOpen}>
+//                   <PopoverTrigger asChild>
+//                     <Button variant="outline" disabled={!selectedTeam} className="h-12 w-full justify-between text-sm">
+//                       {selectedAssignees.length === 0 ? "Select team members..." : `${selectedAssignees.length} selected`}
+//                       <User className="h-4 w-4 text-gray-500 ml-auto" />
+//                     </Button>
+//                   </PopoverTrigger>
+//                   <PopoverContent className="w-full p-0" align="start">
+//                     <Command>
+//                       <CommandInput placeholder="Search members..." value={memberSearchQuery} onValueChange={setMemberSearchQuery} />
+//                       <CommandEmpty>No members found</CommandEmpty>
+//                       <CommandGroup className="max-h-64 overflow-auto">
+//                         {availableMembers.map((m) => (
+//                           <CommandItem key={m.memberId} onSelect={() => toggleAssignee(m)}>
+//                             <Avatar className="h-8 w-8 mr-3">
+//                               <AvatarFallback className="text-xs bg-teal-600 text-white">
+//                                 {getInitials(m.memberName)}
+//                               </AvatarFallback>
+//                             </Avatar>
+//                             <div>
+//                               <div className="font-medium">{m.memberName}</div>
+//                               <div className="text-xs text-gray-500">{m.role}</div>
+//                             </div>
+//                           </CommandItem>
+//                         ))}
+//                       </CommandGroup>
+//                     </Command>
+//                   </PopoverContent>
+//                 </Popover>
+//               </div>
+//               {errors.assignedTo && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.assignedTo}</p>}
+//             </div>
+
+//             {/* Description */}
+//             <div className="w-full">
+//               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                 <Info className="h-4 w-4 text-blue-500 mr-2" /> Description <span className="text-red-500 ml-1">*</span>
+//               </label>
+//               <Textarea
+//                 value={formData.description}
+//                 onChange={(e) => { setFormData(prev => ({ ...prev, description: e.target.value })); setHasUserInteracted(true); }}
+//                 className="w-full h-40 sm:h-48 md:h-52 bg-white border border-gray-300 rounded-lg text-sm resize-vertical focus:ring-2 focus:ring-blue-200 focus:border-blue-500 p-3"
+//                 placeholder="Enter detailed task description..."
+//               />
+//                <p className="text-xs text-muted-foreground mt-1">
+//                 {formData.description.length} characters
+//               </p>
+//               {errors.description && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.description}</p>}
+//             </div>
+
+//             {taskError && (
+//               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+//                 <p className="text-red-600 text-sm flex items-center">
+//                   <X className="h-4 w-4 mr-2" /> {taskError}
+//                 </p>
+//               </div>
+//             )}
+
+//             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 mt-6">
+//               <Button type="button" variant="outline" onClick={onClose}>
+//                 Cancel
+//               </Button>
+//               <Button
+//                 type="submit"
+//                 disabled={!isSaveEnabled || taskStatus === "loading"}
+//                 className="bg-blue-600 hover:bg-blue-700 text-white"
+//               >
+//                 {taskStatus === "loading" ? (
+//                   <>
+//                     <Loader className="mr-2 h-4 w-4 animate-spin" />
+//                     Updating Task...
+//                   </>
+//                 ) : (
+//                   "Update Task"
+//                 )}
+//               </Button>
+//             </div>
+//           </form>
+//         </div>
+//       </DialogContent>
+//     </Dialog>
+//   );
+// };
+
+// export default EditTaskModal;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// "use client";
+// import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+// import { useDispatch, useSelector } from "react-redux";
+// import { updateTask, fetchTaskById } from "@/modules/project-management/task/slices/taskSlice";
+// import { fetchTeamByProjectId } from "@/modules/project-management/team/slices/teamSlice";
+// import { Edit, User, Flag, CalendarIcon, Info, X, Loader } from "lucide-react";
+// import { toast } from "sonner";
+// import { Textarea } from "@/components/ui/textarea";
+// import { Button } from "@/components/ui/button";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+// import { Calendar } from "@/components/ui/calendar";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+//   DialogClose,
+// } from "@/components/ui/dialog";
+// import {
+//   Command,
+//   CommandEmpty,
+//   CommandGroup,
+//   CommandInput,
+//   CommandItem,
+// } from "@/components/ui/command";
+// import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+// import { format } from "date-fns";
+// import { cn } from "@/lib/utils";
+// import { useCurrentUser } from "@/hooks/useCurrentUser";
+
+// const priorityConfig = {
+//   Low: { color: "bg-emerald-100 text-emerald-800", badge: "Low" },
+//   Medium: { color: "bg-amber-100 text-amber-800", badge: "Medium" },
+//   High: { color: "bg-rose-100 text-rose-800", badge: "High" },
+// };
+
+// const getInitials = (name = "") =>
+//   name.trim().split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
+
+// const EditTaskModal = ({ taskId, isOpen, onClose, onTaskUpdated }) => {
+//   const dispatch = useDispatch();
+//   const { currentUser } = useCurrentUser();
+//   const task = useSelector(state => state.task.currentTask);
+//   const { teamsByProject: teams } = useSelector(state => state.team);
+//   const { status: taskStatus, error: taskError } = useSelector(state => state.task);
+
+//   const prevOpenRef = useRef(isOpen);
+
+//   const [formData, setFormData] = useState({ title: "", description: "", priority: "Medium" });
+//   const [selectedAssignees, setSelectedAssignees] = useState([]);
+//   const [selectedTeam, setSelectedTeam] = useState(null);
+//   const [selectedDateTime, setSelectedDateTime] = useState(null);
+//   const [memberSearchQuery, setMemberSearchQuery] = useState("");
+//   const [memberOpen, setMemberOpen] = useState(false);
+//   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+//   const [errors, setErrors] = useState({});
+
+//   // Fetch task when modal opens
+//   useEffect(() => {
+//     const justOpened = isOpen && !prevOpenRef.current;
+//     if (justOpened && taskId) {
+//       dispatch(fetchTaskById(taskId));
+//     }
+//     prevOpenRef.current = isOpen;
+//   }, [isOpen, taskId, dispatch]);
+
+//   // Pre-fill form when task and teams are available
+//   useEffect(() => {
+//     if (!task || !isOpen) {
+//       setSelectedTeam(null);
+//       setSelectedAssignees([]);
+//       setSelectedDateTime(null);
+//       setFormData({ title: "", description: "", priority: "Medium" });
+//       return;
+//     }
+
+//     const deadlineDate = task.deadline ? new Date(task.deadline) : null;
+//     setFormData({
+//       title: task.title || "",
+//       description: task.description || "",
+//       priority: task.priority || "Medium",
+//     });
+//     setSelectedDateTime(deadlineDate);
+
+//     // Find and set current team (runs again when teams load)
+//     if (teams.length > 0) {
+//       const currentTeam = teams.find(t => t.teamId === task.teamId);
+     
+//       setSelectedTeam(currentTeam || null);
+//     } else {
+//       setSelectedTeam(null);
+//     }
+
+//     // Set assignees
+//     const assignees = Array.isArray(task.assignedTo)
+//       ? task.assignedTo.map(a => ({
+//           memberId: a.memberId || a._id,
+//           memberName: a.memberName || a.name || "Unknown",
+//           role: a.role || "Member",
+//         }))
+//       : task.assignedToDetails
+//       ? [{
+//           memberId: task.assignedToDetails.memberId,
+//           memberName: task.assignedToDetails.memberName || "Unknown",
+//           role: task.assignedToDetails.role || "Member",
+//         }]
+//       : [];
+
+//     setSelectedAssignees(assignees);
+//     setMemberSearchQuery("");
+//     setHasUserInteracted(false);
+//     setErrors({});
+//   }, [task, teams, isOpen]);
+
+//   // Fetch teams when projectId is known
+//   useEffect(() => {
+//     if (task?.projectId && isOpen) {
+//       dispatch(fetchTeamByProjectId(task.projectId));
+//     }
+//   }, [task?.projectId, isOpen, dispatch]);
+
+//   const handleTeamSelect = useCallback((value) => {
+  
+//     console.log("gc",value);
+    
+//     const team = teams.find(t => t.teamId === value);
+//     setSelectedTeam(team || null);
+//     setSelectedAssignees([]); // Clear assignees when team changes
+//     setHasUserInteracted(true);
+//   }, [teams]);
+
+//   const availableMembers = useMemo(() => {
+//     if (!selectedTeam?.teamMembers) return [];
+//     const q = memberSearchQuery.toLowerCase();
+//     return selectedTeam.teamMembers
+//       .filter(m =>
+//         m.memberName?.toLowerCase().includes(q) &&
+//         !selectedAssignees.some(a => a.memberId === m.memberId)
+//       )
+//       .map(m => ({
+//         memberId: m.memberId,
+//         memberName: m.memberName,
+//         role: m.role || "Member",
+//       }));
+//   }, [selectedTeam, memberSearchQuery, selectedAssignees]);
+
+//   const toggleAssignee = useCallback((member) => {
+//     setSelectedAssignees(prev => {
+//       const exists = prev.some(a => a.memberId === member.memberId);
+//       setHasUserInteracted(true);
+//       return exists
+//         ? prev.filter(a => a.memberId !== member.memberId)
+//         : [...prev, member];
+//     });
+//   }, []);
+
+//   const validate = useCallback(() => {
+//     if (!hasUserInteracted) return true;
+//     const newErrors = {};
+//     if (!formData.title.trim()) newErrors.title = "Title is required";
+//     if (!formData.description.trim()) newErrors.description = "Description is required";
+//     if (!selectedDateTime) newErrors.deadline = "Deadline is required";
+//     if (!selectedTeam) newErrors.team = "Team selection is required";
+//     if (selectedAssignees.length === 0) newErrors.assignedTo = "Assign at least one member";
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   }, [formData, selectedDateTime, selectedTeam, selectedAssignees, hasUserInteracted]);
+
+//   const handleSubmit = useCallback(async (e) => {
+//     e.preventDefault();
+//     setHasUserInteracted(true);
+//     if (!validate()) {
+//       toast.error("Please fill all required fields");
+//       return;
+//     }
+
+//     const deadlineISO = selectedDateTime ? selectedDateTime.toISOString() : null;
+//     const payload = {
+//       task_id: taskId,
+//       title: formData.title.trim(),
+//       description: formData.description.trim(),
+//       priority: formData.priority,
+//       deadline: deadlineISO,
+//       teamId: selectedTeam.teamId,
+//       assignedTo: selectedAssignees.map(m => ({
+//         memberId: m.memberId,
+//         memberName: m.memberName,
+//         role: m.role,
+//       })),
+//       actionedBy: {
+//         note: "Task Updated!",
+//         performedBy: currentUser?.name || currentUser?.email || "Unknown User",
+//         timestamp: new Date().toISOString(),
+//       },
+//     };
+
+//     try {
+//       await dispatch(updateTask(payload)).unwrap();
+//       toast.success("Task updated successfully!");
+//       onTaskUpdated?.();
+//       onClose();
+//     } catch (err) {
+//       toast.error(taskError || "Failed to update task");
+//     }
+//   }, [validate, formData, selectedDateTime, selectedTeam, selectedAssignees, taskId, currentUser, dispatch, taskError, onTaskUpdated, onClose]);
+
+//   const displayDateTime = selectedDateTime
+//     ? format(selectedDateTime, "MMM dd, yyyy 'at' HH:mm")
+//     : "Select date & time";
+
+//   const isSaveEnabled = formData.title.trim() && formData.description.trim() && selectedDateTime && selectedTeam && selectedAssignees.length > 0;
+
+//   if (!isOpen) return null;
+
+//   //
+
+//                       console.log(task?.assignedTeam?.teamId);
+                      
+                      
+                    
+
+//   return (
+//     <Dialog open={isOpen} onOpenChange={onClose}>
+//       <DialogContent className="w-full max-w-full h-[100vh] max-h-[100vh] sm:max-w-6xl sm:max-h-[85vh] bg-white shadow-lg border border-gray-200 rounded-lg text-black p-2">
+//         <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 border-b border-gray-200 sticky top-0 z-10">
+//           <div className="flex justify-between items-center">
+//             <DialogTitle className="text-base sm:text-lg font-bold text-gray-800 flex items-center">
+//               <Edit className="mr-2 h-4 w-4 text-blue-500" />
+//               Edit Task
+//             </DialogTitle>
+//             <DialogClose asChild>
+//               <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-100 rounded-full h-7 w-7">
+//                 <X className="h-3 w-3" />
+//               </Button>
+//             </DialogClose>
+//           </div>
+//         </DialogHeader>
+
+//         <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(85vh-60px)]">
+//           <form onSubmit={handleSubmit} className="space-y-4">
+//             {/* Title */}
+//             <div className="w-full">
+//               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                 <Edit className="h-4 w-4 text-blue-500 mr-2" /> Title <span className="text-red-500 ml-1">*</span>
+//               </label>
+//               <Textarea
+//                 value={formData.title}
+//                 onChange={(e) =>
+//                   setFormData(prev => ({ ...prev, title: e.target.value.slice(0, 150) }))
+//                 }
+//                 className="w-full bg-white border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 p-3"
+//                 placeholder="Enter task title..."
+//               />
+//               <p className="text-xs text-muted-foreground mt-1">{formData.title.length} / 150 characters</p>
+//               {errors.title && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.title}</p>}
+//             </div>
+
+//             {/* Priority & Deadline */}
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//               <div>
+//                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                   <Flag className="h-4 w-4 text-blue-500 mr-2" /> Priority
+//                 </label>
+//                 <Select value={formData.priority} onValueChange={(v) => { setFormData(prev => ({ ...prev, priority: v })); setHasUserInteracted(true); }}>
+//                   <SelectTrigger className="w-full h-10">
+//                     <SelectValue>
+//                       <span className={cn("px-2 py-1 rounded-full text-xs font-medium", priorityConfig[formData.priority]?.color)}>
+//                         {priorityConfig[formData.priority]?.badge}
+//                       </span>
+//                     </SelectValue>
+//                   </SelectTrigger>
+//                   <SelectContent>
+//                     {Object.entries(priorityConfig).map(([key, config]) => (
+//                       <SelectItem key={key} value={key}>
+//                         <span className={cn("px-2 py-1 rounded-full text-xs font-medium", config.color)}>
+//                           {config.badge}
+//                         </span>
+//                       </SelectItem>
+//                     ))}
+//                   </SelectContent>
+//                 </Select>
+//               </div>
+
+//               <div>
+//                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                   <CalendarIcon className="h-4 w-4 text-blue-500 mr-2" /> Deadline <span className="text-red-500 ml-1">*</span>
+//                 </label>
+//                 <Popover>
+//                   <PopoverTrigger asChild>
+//                     <Button variant="outline" className={cn("w-full justify-between h-10 text-sm", !selectedDateTime && "text-gray-500")}>
+//                       {displayDateTime}
+//                     </Button>
+//                   </PopoverTrigger>
+//                   <PopoverContent className="w-auto p-0 bg-white border border-gray-200 rounded-lg shadow-lg">
+//                     <Calendar mode="single" selected={selectedDateTime} onSelect={(date) => { setSelectedDateTime(date); setHasUserInteracted(true); }} initialFocus className="rounded-lg" />
+//                     <div className="p-3 border-t flex items-center gap-2">
+//                       <input
+//                         type="time"
+//                         value={selectedDateTime ? format(selectedDateTime, "HH:mm") : ""}
+//                         onChange={(e) => {
+//                           if (selectedDateTime) {
+//                             const [h, m] = e.target.value.split(":");
+//                             const newDt = new Date(selectedDateTime);
+//                             newDt.setHours(parseInt(h), parseInt(m));
+//                             setSelectedDateTime(newDt);
+//                             setHasUserInteracted(true);
+//                           }
+//                         }}
+//                         className="h-10 border rounded px-3 text-sm w-full"
+//                       />
+//                     </div>
+//                   </PopoverContent>
+//                 </Popover>
+//                 {errors.deadline && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.deadline}</p>}
+//               </div>
+//             </div>
+
+//             {/* Team */}
+//             <div>
+//               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                 <User className="h-4 w-4 text-blue-500 mr-2" /> Team <span className="text-red-500 ml-1">*</span>
+//               </label>
+               
+//               <Select value="hrms-001" onValueChange={handleTeamSelect}>
+//               {/* <Select value={selectedTeam?.teamId || ""} onValueChange={handleTeamSelect}> */}
+//                 <SelectTrigger className="w-full h-10">
+//                   <SelectValue placeholder="Select a team">
+//                     {selectedTeam ? selectedTeam.teamName : "Select a team"}
+                   
+//                   </SelectValue>
+//                 </SelectTrigger>
+//                 <SelectContent>
+//                   {teams.map((team) => (
+//                     <SelectItem key={team.teamId} value={team.teamId}>
+//                       {team.teamName}
+//                     </SelectItem>
+//                   ))}
+//                 </SelectContent>
+//               </Select>
+//               {errors.team && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.team}</p>}
+//             </div>
+
+
+//             {/* Assign To */}
+//             <div>
+//               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                 <User className="h-4 w-4 text-blue-500 mr-2" /> Assign To <span className="text-red-500 ml-1">*</span>
+//               </label>
+//               <div className="flex flex-wrap gap-3 items-center mb-3">
+//                 {selectedAssignees.map((person) => (
+//                   <div key={person.memberId} className="relative group">
+//                     <Avatar className="h-10 w-10 ring-4 ring-white border-2 border-white cursor-pointer hover:scale-110 transition">
+//                       <AvatarFallback className="bg-teal-600 text-white text-sm font-bold">
+//                         {getInitials(person.memberName)}
+//                       </AvatarFallback>
+//                     </Avatar>
+//                     <button
+//                       type="button"
+//                       onClick={() => toggleAssignee(person)}
+//                       className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+//                     >
+//                       <X className="h-3 w-3" />
+//                     </button>
+//                   </div>
+//                 ))}
+//               </div>
+//               <Popover open={memberOpen} onOpenChange={setMemberOpen}>
+//                 <PopoverTrigger asChild>
+//                   <Button variant="outline" disabled={!selectedTeam} className="w-full h-12 justify-between text-sm">
+//                     {selectedAssignees.length === 0
+//                       ? "Select team members..."
+//                       : `${selectedAssignees.length} member${selectedAssignees.length > 1 ? 's' : ''} selected`}
+//                   </Button>
+//                 </PopoverTrigger>
+//                 <PopoverContent className="w-full p-0" align="start">
+//                   <Command>
+//                     <CommandInput placeholder="Search members..." value={memberSearchQuery} onValueChange={setMemberSearchQuery} />
+//                     <CommandEmpty>No members found</CommandEmpty>
+//                     <CommandGroup className="max-h-64 overflow-auto">
+//                       {availableMembers.map((m) => (
+//                         <CommandItem key={m.memberId} onSelect={() => toggleAssignee(m)}>
+//                           <Avatar className="h-8 w-8 mr-3">
+//                             <AvatarFallback className="text-xs bg-teal-600 text-white">
+//                               {getInitials(m.memberName)}
+//                             </AvatarFallback>
+//                           </Avatar>
+//                           <div>
+//                             <div className="font-medium">{m.memberName}</div>
+//                             <div className="text-xs text-gray-500">{m.role}</div>
+//                           </div>
+//                         </CommandItem>
+//                       ))}
+//                     </CommandGroup>
+//                   </Command>
+//                 </PopoverContent>
+//               </Popover>
+//               {errors.assignedTo && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.assignedTo}</p>}
+//             </div>
+
+//             {/* Description */}
+//             <div className="w-full">
+//               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+//                 <Info className="h-4 w-4 text-blue-500 mr-2" /> Description <span className="text-red-500 ml-1">*</span>
+//               </label>
+//               <Textarea
+//                 value={formData.description}
+//                 onChange={(e) => { setFormData(prev => ({ ...prev, description: e.target.value })); setHasUserInteracted(true); }}
+//                 className="w-full h-40 sm:h-48 md:h-52 bg-white border border-gray-300 rounded-lg text-sm resize-vertical focus:ring-2 focus:ring-blue-200 focus:border-blue-500 p-3"
+//                 placeholder="Enter detailed task description..."
+//               />
+//               <p className="text-xs text-muted-foreground mt-1">{formData.description.length} characters</p>
+//               {errors.description && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.description}</p>}
+//             </div>
+
+//             {taskError && (
+//               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+//                 <p className="text-red-600 text-sm flex items-center">
+//                   <X className="h-4 w-4 mr-2" /> {taskError}
+//                 </p>
+//               </div>
+//             )}
+
+//             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 mt-6">
+//               <Button type="button" variant="outline" onClick={onClose}>
+//                 Cancel
+//               </Button>
+//               <Button
+//                 type="submit"
+//                 disabled={!isSaveEnabled || taskStatus === "loading"}
+//                 className="bg-blue-600 hover:bg-blue-700 text-white"
+//               >
+//                 {taskStatus === "loading" ? (
+//                   <>
+//                     <Loader className="mr-2 h-4 w-4 animate-spin" />
+//                     Updating Task...
+//                   </>
+//                 ) : (
+//                   "Update Task"
+//                 )}
+//               </Button>
+//             </div>
+//           </form>
+//         </div>
+//       </DialogContent>
+//     </Dialog>
+//   );
+// };
+
+// export default EditTaskModal;
+
+
+
+
+
+
+
+
+
+"use client";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { updateTask, fetchTaskById } from "@/modules/project-management/task/slices/taskSlice";
+import { fetchTeamByProjectId } from "@/modules/project-management/team/slices/teamSlice";
+import { Edit, User, Flag, CalendarIcon, Info, X, Loader } from "lucide-react";
+import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+
+const priorityConfig = {
+  Low: { color: "bg-emerald-100 text-emerald-800", badge: "Low" },
+  Medium: { color: "bg-amber-100 text-amber-800", badge: "Medium" },
+  High: { color: "bg-rose-100 text-rose-800", badge: "High" },
+};
+
+const getInitials = (name = "") =>
+  name.trim().split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2);
+
+const EditTaskModal = ({ taskId, isOpen, onClose, onTaskUpdated }) => {
+  const dispatch = useDispatch();
+  const { currentUser } = useCurrentUser();
+  const task = useSelector(state => state.task.currentTask);
+  const { teamsByProject: teams } = useSelector(state => state.team);
+  const { status: taskStatus, error: taskError } = useSelector(state => state.task);
+
+  const prevOpenRef = useRef(isOpen);
+
+  const [formData, setFormData] = useState({ title: "", description: "", priority: "Medium" });
+  const [selectedAssignees, setSelectedAssignees] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [selectedDateTime, setSelectedDateTime] = useState(null);
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
+  const [memberOpen, setMemberOpen] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  // Fetch task when modal opens
+  useEffect(() => {
+    const justOpened = isOpen && !prevOpenRef.current;
+    if (justOpened && taskId) {
+      dispatch(fetchTaskById(taskId));
+    }
+    prevOpenRef.current = isOpen;
+  }, [isOpen, taskId, dispatch]);
+
+  // Pre-fill form including team selection
+  useEffect(() => {
+    if (!task || !isOpen) {
+      setSelectedTeam(null);
+      setSelectedAssignees([]);
+      setSelectedDateTime(null);
+      setFormData({ title: "", description: "", priority: "Medium" });
+      return;
+    }
+
+    const deadlineDate = task.deadline ? new Date(task.deadline) : null;
+    setFormData({
+      title: task.title || "",
+      description: task.description || "",
+      priority: task.priority || "Medium",
+    });
+    setSelectedDateTime(deadlineDate);
+
+    // === CRITICAL: Find team using task.teamId OR task.assignedTeam?.teamId ===
+    const currentTaskTeamId = task.teamId || task.assignedTeam?.teamId;
+
+    if (currentTaskTeamId && teams.length > 0) {
+      const matchedTeam = teams.find(t => t.teamId === currentTaskTeamId);
+      setSelectedTeam(matchedTeam || null);
+    } else {
+      setSelectedTeam(null);
+    }
+
+    // Set assignees
+    const assignees = Array.isArray(task.assignedTo)
+      ? task.assignedTo.map(a => ({
+          memberId: a.memberId || a._id,
+          memberName: a.memberName || a.name || "Unknown",
+          role: a.role || "Member",
+        }))
+      : task.assignedToDetails
+      ? [{
+          memberId: task.assignedToDetails.memberId,
+          memberName: task.assignedToDetails.memberName || "Unknown",
+          role: task.assignedToDetails.role || "Member",
+        }]
+      : [];
+
+    setSelectedAssignees(assignees);
+    setMemberSearchQuery("");
+    setHasUserInteracted(false);
+    setErrors({});
+  }, [task, teams, isOpen]);
+
+  // Fetch teams when projectId is known
+  useEffect(() => {
+    if (task?.projectId && isOpen) {
+      dispatch(fetchTeamByProjectId(task.projectId));
+    }
+  }, [task?.projectId, isOpen, dispatch]);
+
+  const handleTeamSelect = useCallback((value) => {
+    const team = teams.find(t => t.teamId === value);
+    setSelectedTeam(team || null);
+    setSelectedAssignees([]); // Clear assignees when team changes
+    setHasUserInteracted(true);
+  }, [teams]);
+
+  const availableMembers = useMemo(() => {
+    if (!selectedTeam?.teamMembers) return [];
+    const q = memberSearchQuery.toLowerCase();
+    return selectedTeam.teamMembers
+      .filter(m =>
+        m.memberName?.toLowerCase().includes(q) &&
+        !selectedAssignees.some(a => a.memberId === m.memberId)
+      )
+      .map(m => ({
+        memberId: m.memberId,
+        memberName: m.memberName,
+        role: m.role || "Member",
+      }));
+  }, [selectedTeam, memberSearchQuery, selectedAssignees]);
+
+  const toggleAssignee = useCallback((member) => {
+    setSelectedAssignees(prev => {
+      const exists = prev.some(a => a.memberId === member.memberId);
+      setHasUserInteracted(true);
+      return exists
+        ? prev.filter(a => a.memberId !== member.memberId)
+        : [...prev, member];
+    });
+  }, []);
+
+  const validate = useCallback(() => {
+    if (!hasUserInteracted) return true;
+    const newErrors = {};
+    if (!formData.title.trim()) newErrors.title = "Title is required";
+    if (!formData.description.trim()) newErrors.description = "Description is required";
+    if (!selectedDateTime) newErrors.deadline = "Deadline is required";
+    if (!selectedTeam) newErrors.team = "Team selection is required";
+    if (selectedAssignees.length === 0) newErrors.assignedTo = "Assign at least one member";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [formData, selectedDateTime, selectedTeam, selectedAssignees, hasUserInteracted]);
+
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    setHasUserInteracted(true);
+    if (!validate()) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    const deadlineISO = selectedDateTime ? selectedDateTime.toISOString() : null;
+    const payload = {
+      task_id: taskId,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      priority: formData.priority,
+      deadline: deadlineISO,
+      teamId: selectedTeam.teamId,
+      assignedTo: selectedAssignees.map(m => ({
+        memberId: m.memberId,
+        memberName: m.memberName,
+        role: m.role,
+      })),
+      actionedBy: {
+        note: "Task Updated!",
+        performedBy: currentUser?.name || currentUser?.email || "Unknown User",
+        timestamp: new Date().toISOString(),
+      },
+    };
+
+    try {
+      await dispatch(updateTask(payload)).unwrap();
+      toast.success("Task updated successfully!");
+      onTaskUpdated?.();
+      onClose();
+    } catch (err) {
+      toast.error(taskError || "Failed to update task");
+    }
+  }, [validate, formData, selectedDateTime, selectedTeam, selectedAssignees, taskId, currentUser, dispatch, taskError, onTaskUpdated, onClose]);
+
+  const displayDateTime = selectedDateTime
+    ? format(selectedDateTime, "MMM dd, yyyy 'at' HH:mm")
+    : "Select date & time";
+
+  const isSaveEnabled = formData.title.trim() && formData.description.trim() && selectedDateTime && selectedTeam && selectedAssignees.length > 0;
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="w-full max-w-full h-[100vh] max-h-[100vh] sm:max-w-6xl sm:max-h-[85vh] bg-white shadow-lg border border-gray-200 rounded-lg text-black p-2">
+        <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 border-b border-gray-200 sticky top-0 z-10">
+          <div className="flex justify-between items-center">
+            <DialogTitle className="text-base sm:text-lg font-bold text-gray-800 flex items-center">
+              <Edit className="mr-2 h-4 w-4 text-blue-500" />
+              Edit Task
+            </DialogTitle>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-100 rounded-full h-7 w-7">
+                <X className="h-3 w-3" />
+              </Button>
+            </DialogClose>
+          </div>
+        </DialogHeader>
+
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(85vh-60px)]">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Title */}
+            <div className="w-full">
+              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                <Edit className="h-4 w-4 text-blue-500 mr-2" /> Title <span className="text-red-500 ml-1">*</span>
+              </label>
+              <Textarea
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value.slice(0, 150) }))}
+                className="w-full bg-white border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 p-3"
+                placeholder="Enter task title..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">{formData.title.length} / 150 characters</p>
+              {errors.title && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.title}</p>}
+            </div>
+
+            {/* Priority & Deadline */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Flag className="h-4 w-4 text-blue-500 mr-2" /> Priority
+                </label>
+                <Select value={formData.priority} onValueChange={(v) => { setFormData(prev => ({ ...prev, priority: v })); setHasUserInteracted(true); }}>
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue>
+                      <span className={cn("px-2 py-1 rounded-full text-xs font-medium", priorityConfig[formData.priority]?.color)}>
+                        {priorityConfig[formData.priority]?.badge}
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(priorityConfig).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        <span className={cn("px-2 py-1 rounded-full text-xs font-medium", config.color)}>
+                          {config.badge}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <CalendarIcon className="h-4 w-4 text-blue-500 mr-2" /> Deadline <span className="text-red-500 ml-1">*</span>
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-between h-10 text-sm", !selectedDateTime && "text-gray-500")}>
+                      {displayDateTime}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <Calendar mode="single" selected={selectedDateTime} onSelect={(date) => { setSelectedDateTime(date); setHasUserInteracted(true); }} initialFocus className="rounded-lg" />
+                    <div className="p-3 border-t flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={selectedDateTime ? format(selectedDateTime, "HH:mm") : ""}
+                        onChange={(e) => {
+                          if (selectedDateTime) {
+                            const [h, m] = e.target.value.split(":");
+                            const newDt = new Date(selectedDateTime);
+                            newDt.setHours(parseInt(h), parseInt(m));
+                            setSelectedDateTime(newDt);
+                            setHasUserInteracted(true);
+                          }
+                        }}
+                        className="h-10 border rounded px-3 text-sm w-full"
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                {errors.deadline && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.deadline}</p>}
+              </div>
+            </div>
+
+            {/* Team - Now correctly pre-selected and shows team name */}
+            <div>
+              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                <User className="h-4 w-4 text-blue-500 mr-2" /> Team <span className="text-red-500 ml-1">*</span>
+              </label>
+              <Select value={selectedTeam?.teamId || ""} onValueChange={handleTeamSelect}>
+                <SelectTrigger className="w-full h-10">
+                  <SelectValue placeholder="Select a team">
+                    {selectedTeam ? selectedTeam.teamName : "Select a team"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {teams.map((team) => (
+                    <SelectItem key={team.teamId} value={team.teamId}>
+                      {team.teamName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.team && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.team}</p>}
+            </div>
+
+            {/* Assign To */}
+            <div>
+              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                <User className="h-4 w-4 text-blue-500 mr-2" /> Assign To <span className="text-red-500 ml-1">*</span>
+              </label>
+              <div className="flex flex-wrap gap-3 items-center mb-3">
+                {selectedAssignees.map((person) => (
+                  <div key={person.memberId} className="relative group">
+                    <Avatar className="h-10 w-10 ring-4 ring-white border-2 border-white cursor-pointer hover:scale-110 transition">
+                      <AvatarFallback className="bg-teal-600 text-white text-sm font-bold">
+                        {getInitials(person.memberName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <button
+                      type="button"
+                      onClick={() => toggleAssignee(person)}
+                      className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <Popover open={memberOpen} onOpenChange={setMemberOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" disabled={!selectedTeam} className="w-full h-12 justify-between text-sm">
+                    {selectedAssignees.length === 0
+                      ? "Select team members..."
+                      : `${selectedAssignees.length} member${selectedAssignees.length > 1 ? 's' : ''} selected`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search members..." value={memberSearchQuery} onValueChange={setMemberSearchQuery} />
+                    <CommandEmpty>No members found</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {availableMembers.map((m) => (
+                        <CommandItem key={m.memberId} onSelect={() => toggleAssignee(m)}>
+                          <Avatar className="h-8 w-8 mr-3">
+                            <AvatarFallback className="text-xs bg-teal-600 text-white">
+                              {getInitials(m.memberName)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{m.memberName}</div>
+                            <div className="text-xs text-gray-500">{m.role}</div>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {errors.assignedTo && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.assignedTo}</p>}
+            </div>
+
+            {/* Description */}
+            <div className="w-full">
+              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                <Info className="h-4 w-4 text-blue-500 mr-2" /> Description <span className="text-red-500 ml-1">*</span>
+              </label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => { setFormData(prev => ({ ...prev, description: e.target.value })); setHasUserInteracted(true); }}
+                className="w-full h-40 sm:h-48 md:h-52 bg-white border border-gray-300 rounded-lg text-sm resize-vertical focus:ring-2 focus:ring-blue-200 focus:border-blue-500 p-3"
+                placeholder="Enter detailed task description..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">{formData.description.length} characters</p>
+              {errors.description && <p className="text-red-500 text-xs mt-1 flex items-center"><X className="h-3 w-3 mr-1" /> {errors.description}</p>}
+            </div>
+
+            {taskError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-600 text-sm flex items-center">
+                  <X className="h-4 w-4 mr-2" /> {taskError}
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 mt-6">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!isSaveEnabled || taskStatus === "loading"}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {taskStatus === "loading" ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Updating Task...
+                  </>
+                ) : (
+                  "Update Task"
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default EditTaskModal;
