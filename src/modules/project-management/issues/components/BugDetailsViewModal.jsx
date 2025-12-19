@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { formatDateTimeIST } from "@/utils/formatDate";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useDispatch, useSelector } from "react-redux";
-import { resolveBug, clearErrors, getBugById } from "@/modules/project-management/issues/slices/bugSlice";
+import { resolveBug, clearErrors, getBugById ,fetchBugByProjectId} from "@/modules/project-management/issues/slices/bugSlice";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const BugDetailsViewModal = ({ isOpen, onOpenChange, bugId }) => {
+const BugDetailsViewModal = ({ projectId,isOpen, onOpenChange, bugId }) => {
   const { currentUser } = useCurrentUser();
   const dispatch = useDispatch();
   const router = useRouter();
@@ -84,14 +84,36 @@ const BugDetailsViewModal = ({ isOpen, onOpenChange, bugId }) => {
       ...(isPastDeadline && { delayReason }),
     };
 
-    dispatch(resolveBug(payload)).then((result) => {
-      if (result.error) {
-        toast.error(`Failed to resolve bug: ${result.error.message}`);
-      } else {
-        toast.success("Issue resolved successfully!");
-        onOpenChange(false);
-      }
-    });
+    // dispatch(resolveBug(payload)).then((result) => {
+    //   if (result.error) {
+    //     toast.error(`Failed to resolve bug: ${result.error.message}`);
+    //   } else {
+    //     toast.success("Issue resolved successfully!");
+    //     onOpenChange(false);
+    //   }
+    // });
+  
+  
+  dispatch(resolveBug(payload)).then((result) => {
+  if (result.error) {
+    toast.error(`Failed to resolve bug: ${result.error.message}`);
+  } else {
+    toast.success("Issue resolved successfully!");
+
+    // ✅ REFRESH BUG LIST
+    dispatch(fetchBugByProjectId(projectId));
+
+    // ✅ CLOSE MODAL
+    onOpenChange(false);
+  }
+});
+
+  
+  
+  
+  
+  
+  
   };
 
   if (!bugDetails) {

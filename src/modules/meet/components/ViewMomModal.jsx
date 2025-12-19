@@ -7,15 +7,17 @@ import DownloadMom from './DownloadMom';
 const ViewMomModal = ({ open, onOpenChange, meetingMomView, meetingMomViewLoading, status }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+ 
       <DialogContent 
-        className="
-          w-[100vw] sm:w-[95vw] lg:w-[85vw] 
-          h-[95vh] 
-          max-w-6xl
-          bg-white rounded-2xl shadow-2xl 
-          flex flex-col overflow-hidden
-        "
-      >
+  className="
+    w-[100vw] 
+    sm:max-w-7xl 
+    h-[95vh]
+    bg-white rounded-2xl shadow-2xl
+    flex flex-col overflow-hidden
+  "
+>
+
         {/* Header */}
         <DialogHeader className="px-4 sm:px-6 py-3 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-white shrink-0">
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -26,12 +28,7 @@ const ViewMomModal = ({ open, onOpenChange, meetingMomView, meetingMomViewLoadin
                 <FileText className="h-6 w-6 text-blue-600" />
                 Minutes of Meeting
               </DialogTitle>
-              {meetingMomView?.momId && (
-                <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
-                  <Hash className="h-4 w-4 text-gray-400" />
-                  <span>MOM ID: {meetingMomView.momId}</span>
-                </div>
-              )}
+            
             </div>
 
             {/* Download Button */}

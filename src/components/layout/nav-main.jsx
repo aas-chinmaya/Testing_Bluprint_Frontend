@@ -30,7 +30,6 @@ import {
 
 export function NavMain({ items }) {
   const pathname = usePathname();
-// console.log("items in navmain",items)
   return (
     <SidebarGroup>
       <SidebarGroupLabel></SidebarGroupLabel>
@@ -91,3 +90,4 @@ export function NavMain({ items }) {
     </SidebarGroup>
   );
 }
+

@@ -1,0 +1,23 @@
+{
+  "/(protected)/(common)/dashboard/page": "app/(protected)/(common)/dashboard/page.js",
+  "/(protected)/client/all/page": "app/(protected)/client/all/page.js",
+  "/(protected)/client/onboarding/page": "app/(protected)/client/onboarding/page.js",
+  "/(protected)/escalation/show-cause/page": "app/(protected)/escalation/show-cause/page.js",
+  "/(protected)/marketing/contacts/all/page": "app/(protected)/marketing/contacts/all/page.js",
+  "/(protected)/marketing/contacts/overview/page": "app/(protected)/marketing/contacts/overview/page.js",
+  "/(protected)/marketing/contacts/recent/page": "app/(protected)/marketing/contacts/recent/page.js",
+  "/(protected)/master/industry/page": "app/(protected)/master/industry/page.js",
+  "/(protected)/master/services/page": "app/(protected)/master/services/page.js",
+  "/(protected)/master/slots/page": "app/(protected)/master/slots/page.js",
+  "/(protected)/project/[id]/page": "app/(protected)/project/[id]/page.js",
+  "/(protected)/project/all/page": "app/(protected)/project/all/page.js",
+  "/(protected)/quotation/page": "app/(protected)/quotation/page.js",
+  "/(protected)/workspace/my-projects/page": "app/(protected)/workspace/my-projects/page.js",
+  "/(protected)/workspace/task/[id]/[subtaskid]/page": "app/(protected)/workspace/task/[id]/[subtaskid]/page.js",
+  "/(protected)/workspace/task/[id]/page": "app/(protected)/workspace/task/[id]/page.js",
+  "/(protected)/workspace/team/all/page": "app/(protected)/workspace/team/all/page.js",
+  "/(public)/login/page": "app/(public)/login/page.js",
+  "/(public)/page": "app/(public)/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js"
+}

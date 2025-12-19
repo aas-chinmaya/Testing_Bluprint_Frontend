@@ -290,11 +290,11 @@ const EditBugModal = ({bugId, isOpen, onOpenChange }) => {
                 onChange={(e) => setAttachment(e.target.files[0] || null)}
                 disabled={isSubmitting}
               />
-              {bugDetails?.attachmentUrl && !attachment && (
+              {bugDetails?.attachmentLink && !attachment && (
                 <p className="text-xs mt-1">
                   Current file:{" "}
                   <a
-                    href={bugDetails.attachmentUrl}
+                    href={bugDetails.attachmentLink}
                     target="_blank"
                     className="text-blue-600 underline"
                   >

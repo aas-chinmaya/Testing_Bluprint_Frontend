@@ -379,10 +379,9 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                   </SelectTrigger>
                   <SelectContent className="bg-white shadow-lg border-gray-200 rounded-lg">
                     <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Open">Open</SelectItem>
+                   
                     <SelectItem value="Resolved">Resolved</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
                 {showAssignedFilter && (
@@ -665,6 +664,7 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
           <BugDetailsViewModal
             isOpen={showViewModal}
             onOpenChange={setShowViewModal}
+            projectId={projectId}
             bug={selectedBug}
             bugId={selectedBug?.bug_id}
           />

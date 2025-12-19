@@ -9,9 +9,9 @@ export const injectStore = _store => {
 
 // 🌍 Root Domain from .env
 
-  // const BASE_ROOT =  "http://localhost:8080";
-//    const BASE_ROOT = 'https://bluapi.aasint.com';
-const BASE_ROOT = 'https://bluapi.aas.technology';
+  const BASE_ROOT =  "http://localhost:8080";
+
+// const BASE_ROOT = 'https://bluapi.aas.technology';
 
 
 

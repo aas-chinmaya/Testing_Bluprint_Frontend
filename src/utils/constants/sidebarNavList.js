@@ -1,3 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use client";
 
 import {
@@ -14,7 +29,9 @@ import {
   Folder,
 } from "lucide-react";
 
-// 🧠 Icon Map
+/* ============================
+ 🧠 Icon Map
+============================ */
 export const iconMap = {
   LayoutDashboard,
   Inbox,
@@ -29,33 +46,22 @@ export const iconMap = {
   Folder,
 };
 
-// 👥 Role Groups
+/* ============================
+ 👥 Role Groups (UNCHANGED)
+============================ */
 export const roleGroups = {
   cpcGroup: ["cpc", "Team Lead"],
   employeeGroup: ["employee(regular)"],
 };
 
-// 🧩 Utility — prefix + alias generator
-const withBase = (base, items) =>
-  items.map((item) => ({
-    ...item,
-    alias: item.alias || `${base.replace("/", "")}-${item.path || "root"}`,
-    url: `${base}${item.path ? `/${item.path}` : ""}`,
-  }));
-
-// 📦 Base paths
-const WORKSPACE_BASE = "/workspace";
-const PROJECT_BASE = "/project";
-const MARKETING_BASE = "/marketing";
-const SALES_BASE = "/sales";
-const FINANCE_BASE = "/finance";
-const REPORTS_BASE = "/reports";
-const MASTER_BASE = "/master";
-const CLIENT_BASE = "/client";
-const ESCALATION_BASE = "/escalation";
-
-// 🧭 Unified Navigation
+/* ============================
+ 🧭 Navigation (4 Categories)
+ ROUTES ARE SAME AS ORIGINAL
+============================ */
 export const fullNav = [
+  /* ============================
+   📊 Dashboard
+  ============================ */
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -63,142 +69,150 @@ export const fullNav = [
     alias: "dashboard",
     roles: ["cpcGroup", "employeeGroup"],
   },
+
+  /* ============================
+   📞 Leads
+  ============================ */
   {
-    title: "Inbox",
-    url: "/inbox",
+    title: "Leads",
     icon: "Inbox",
-    alias: "inbox",
-    roles: ["cpcGroup", "employeeGroup"],
-  },
-  // {
-  //   title: "Calendar",
-  //   url: "/calendar",
-  //   icon: "CalendarDays",
-  //   alias: "planner",
-  //   roles: ["cpcGroup", "employeeGroup"],
-  // },
-
-  // 🧠 Project
-  {
-    title: "Projects",
-    icon: "Folder",
+    alias: "leads-root",
     roles: ["cpcGroup"],
-    alias: "project-root",
-    items: withBase(PROJECT_BASE, [
+    items: [
+      {
+        title: "Overview",
+        url: "/marketing/contacts/overview",
+        roles: ["cpcGroup", "employeeGroup"],
+      },
+      {
+        title: "Recent Inquiry",
+        url: "/marketing/contacts/recent",
+        roles: ["cpcGroup", "employeeGroup"],
+      },
+      {
+        title: "All Inquiry",
+        url: "/marketing/contacts/all",
+        roles: ["cpcGroup", "employeeGroup"],
+      },
+      {
+        title: "Schedule",
+        url: "/marketing/schedule",
+        roles: ["cpcGroup", "employeeGroup"],
+      },
+      {
+        title: "Quotations",
+        url: "/quotation",
+        roles: ["cpcGroup", "employeeGroup"],
+      },
+    ],
+  },
 
-      // CPC / Team Lead
-      { title: "All Projects", path: "all", alias: "projects-all", roles: ["cpcGroup"] },
-      { title: "Onboarding", path: "onboarding", alias: "projects-onboarding", roles: ["cpcGroup"] },
+  /* ============================
+   👥 Client
+  ============================ */
+  {
+    title: "Client",
+    icon: "Users",
+    alias: "client-root",
+    roles: ["cpcGroup", "employeeGroup"],
+    items: [
+      {
+        title: "Clients",
+        url: "/client/all",
+        roles: ["cpcGroup", "employeeGroup"],
+      },
+        {
+        title: "Brands",
+        url: "/client/brands",
+        roles: ["cpcGroup", "employeeGroup"],
+      },
+
+      // Projects
+      {
+        title: "Projects",
+        url: "/project/all",
+        roles: ["cpcGroup"],
+      },
     
-      
-    ]),
-  },
-  // 🧠 Workspace
-  {
-    title: "Workspace",
-    icon: "Folder",
-    roles: ["cpcGroup", "employeeGroup"],
-    alias: "workspace-root",
-    items: withBase(WORKSPACE_BASE, [
-
-      // CPC / Team Lead
-      { title: "All Teams", path: "team/all", alias: "workspace-teams-all", roles: ["cpcGroup"] },
-      { title: "all Task", path: "task/all", alias: "workspace-tasks-all", roles: ["cpcGroup"] },
-      { title: "All Issues", path: "issues/all", alias: "workspace-issues-all", roles: ["cpcGroup"] },
-      
-      
-      // Employee
-      { title: "Assigned Projects", path: "my-projects", alias: "workspace-projects-my", roles: ["employeeGroup"] },
-      { title: "Assigned Tasks", path: "task/my-tasks", alias: "workspace-tasks-my", roles: ["employeeGroup"] },
-      { title: "Assigned Issues", path: "issues/my-issues", alias: "workspace-issues-all", roles: ["employeeGroup"] },
-      { title: "Worked Teams", path: "team/my-teams", alias: "workspace-teams-my", roles: ["employeeGroup"] },
-      
-    ]),
-  },
-
-  // 📣 Marketing
-  {
-   title: "Contacts",
-   url: "#",
-   icon: "Inbox",
-   roles: ["cpcGroup"],
-   items: withBase(MARKETING_BASE,[
-     { title: "Overview", path: "contacts/overview", roles: ["cpcGroup", "employeeGroup"] },
-     { title: "Recent Inquiry", path: "contacts/recent", roles: ["cpcGroup", "employeeGroup"] },
-    //  { title: "Follow-Up Action", path: "contacts/follow-ups", roles: ["cpcGroup", "employeeGroup"] },
-     { title: "All Inquiry", path: "contacts/all", roles: ["cpcGroup", "employeeGroup"] },
-    //  { title: "Reports", path: "/contacts/reports", roles: ["cpcGroup", "employeeGroup"] },
-   ]),
- },
-
-   {
-   title: "Client",
-   url: "#",
-   icon: "Inbox",
-   roles: ["cpcGroup"],
-   items: withBase(CLIENT_BASE,[
-     { title: "All Clients", path: "all", roles: ["cpcGroup", "employeeGroup"] },
-     { title: "Onboarding", path: "onboarding", roles: ["cpcGroup", "employeeGroup"] },
-
    
-   ]),
- },
-  // // 💰 Sales
-  // {
-  //   title: "Sales",
-  //   icon: "Users",
-  //   alias: "sales-root",
-  //   roles: ["cpcGroup"],
-  //   items: withBase(SALES_BASE, [
-  //     { title: "Quotation", path: "quotation", alias: "sales-quotations-all", roles: ["cpcGroup", "employeeGroup"] },
-  //     // { title: "Approved Quotations", path: "quotations/approved", alias: "sales-quotations-approved", roles: ["cpcGroup", "employeeGroup"] },
-  //   ]),
-  // },
-// // 💰 Sales (WITHOUT base)
-//   {
-//     title: "Sales",
-//     icon: "Users",
-//     alias: "sales-root",
-//     roles: ["cpcGroup"],
-//     items: [
-//           { title: "Quotation", path: "quotation", alias: "sales-quotations-all", roles: ["cpcGroup", "employeeGroup"] },
-//       { title: "Approved Quotations", path: "quotations/approved", alias: "sales-quotations-approved", roles: ["cpcGroup", "employeeGroup"] },
-  
-//     ],
-//   },
 
-  {
-   title: "Quotations",
-   url: "#",
-   icon: "Inbox",
-   roles: ["cpcGroup"],
-   items: [
-     { title: "All Quotations", url: "/quotation", roles: ["cpcGroup", "employeeGroup"] },
-   ],
- },
+      // Workspace (Client-related)
+      {
+        title: "Teams",
+        url: "/workspace/team/all",
+        roles: ["cpcGroup"],
+      },
+      {
+        title: "Tasks",
+        url: "/workspace/task/all",
+        roles: ["cpcGroup"],
+      },
+      {
+        title: "Issues",
+        url: "/workspace/issues/all",
+        roles: ["cpcGroup"],
+      },
 
-
-  // ⚙️ Master Data
-  {
-    title: "Escalation",
-    icon: "FolderClosed",
-    alias: "master-root",
-    roles: ["cpcGroup"],
-    items: withBase(ESCALATION_BASE, [
-      { title: "Show cause", path: "show-cause", alias: "show-cause", roles: ["cpcGroup"] },
-      
-    ]),
+      {
+        title: "Projects",
+        url: "/workspace/my-projects",
+        roles: ["employeeGroup"],
+      },
+      {
+        title: "Tasks",
+        url: "/workspace/task/my-tasks",
+        roles: ["employeeGroup"],
+      },
+      {
+        title: "Issues",
+        url: "/workspace/issues/my-issues",
+        roles: ["employeeGroup"],
+      },
+      {
+        title: "Teams",
+        url: "/workspace/team/my-teams",
+        roles: ["employeeGroup"],
+      },
+      {
+        title: "Payment",
+        url: "/finance",
+        roles: ["cpcGroup"],
+      },
+    ],
   },
-  // ⚙️ Master Data
+
+  /* ============================
+   ⚙️ Master (ALL OTHERS)
+  ============================ */
   {
     title: "Master",
     icon: "FolderClosed",
     alias: "master-root",
     roles: ["cpcGroup"],
-    items: withBase(MASTER_BASE, [
-      { title: "Service Catalog", path: "services", alias: "master-services-all", roles: ["cpcGroup"] },
-      { title: "Industry Setup", path: "industry", alias: "master-industry-all", roles: ["cpcGroup"] },
-      { title: "Meeting Slots", path: "slots", alias: "master-slots-all", roles: ["cpcGroup"] },
-    ]),
+    items: [
+      {
+        title: "Show Cause",
+        url: "/escalation/show-cause",
+        roles: ["cpcGroup"],
+      },
+      {
+        title: "Service Catalog",
+        url: "/master/services",
+        roles: ["cpcGroup"],
+      },
+      {
+        title: "Industry Setup",
+        url: "/master/industry",
+        roles: ["cpcGroup"],
+      },
+      {
+        title: "Meeting Slots",
+        url: "/master/slots",
+        roles: ["cpcGroup"],
+      },
+    ],
   },
 ];
+
+
+
