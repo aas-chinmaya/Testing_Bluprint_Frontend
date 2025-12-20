@@ -1,63 +1,12 @@
 {
   "app": {
-    "[project]/src/app/(protected)/(common)/dashboard/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/client/all/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/client/onboarding/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/escalation/show-cause/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/marketing/contacts/all/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/marketing/contacts/overview/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/marketing/contacts/recent/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/master/industry/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/master/services/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/master/slots/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/project/[id]/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/project/all/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/quotation/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/workspace/my-projects/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/workspace/task/[id]/[subtaskid]/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/workspace/task/[id]/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/(protected)/workspace/team/all/page": [
+    "[project]/src/app/(protected)/meet/schedule/page": [
       "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
     ],
     "[project]/src/app/(public)/login/page": [
       "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
     ],
     "[project]/src/app/(public)/page": [
-      "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
-    ],
-    "[project]/src/app/_not-found/page": [
       "static/media/XRXV3I6Li01BKofINeaBTMnFcQ-s.p.5b5a25ed.woff2"
     ]
   },

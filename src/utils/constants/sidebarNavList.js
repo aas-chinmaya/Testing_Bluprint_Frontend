@@ -96,7 +96,7 @@ export const fullNav = [
       },
       {
         title: "Schedule",
-        url: "/marketing/schedule",
+        url: "/meet/schedule",
         roles: ["cpcGroup", "employeeGroup"],
       },
       {
@@ -137,11 +137,7 @@ export const fullNav = [
    
 
       // Workspace (Client-related)
-      {
-        title: "Teams",
-        url: "/workspace/team/all",
-        roles: ["cpcGroup"],
-      },
+  
       {
         title: "Tasks",
         url: "/workspace/task/all",
@@ -175,7 +171,7 @@ export const fullNav = [
       },
       {
         title: "Payment",
-        url: "/finance",
+        url: "/client/payment",
         roles: ["cpcGroup"],
       },
     ],
@@ -190,6 +186,11 @@ export const fullNav = [
     alias: "master-root",
     roles: ["cpcGroup"],
     items: [
+        {
+        title: "Teams",
+        url: "/workspace/team/all",
+        roles: ["cpcGroup"],
+      },
       {
         title: "Show Cause",
         url: "/escalation/show-cause",

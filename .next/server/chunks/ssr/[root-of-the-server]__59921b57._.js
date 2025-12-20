@@ -102,7 +102,7 @@ const fullNav = [
             },
             {
                 title: "Schedule",
-                url: "/marketing/schedule",
+                url: "/meet/schedule",
                 roles: [
                     "cpcGroup",
                     "employeeGroup"
@@ -155,13 +155,6 @@ const fullNav = [
             },
             // Workspace (Client-related)
             {
-                title: "Teams",
-                url: "/workspace/team/all",
-                roles: [
-                    "cpcGroup"
-                ]
-            },
-            {
                 title: "Tasks",
                 url: "/workspace/task/all",
                 roles: [
@@ -205,7 +198,7 @@ const fullNav = [
             },
             {
                 title: "Payment",
-                url: "/finance",
+                url: "/client/payment",
                 roles: [
                     "cpcGroup"
                 ]
@@ -222,6 +215,13 @@ const fullNav = [
             "cpcGroup"
         ],
         items: [
+            {
+                title: "Teams",
+                url: "/workspace/team/all",
+                roles: [
+                    "cpcGroup"
+                ]
+            },
             {
                 title: "Show Cause",
                 url: "/escalation/show-cause",
